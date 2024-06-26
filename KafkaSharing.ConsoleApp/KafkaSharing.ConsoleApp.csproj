@@ -13,4 +13,18 @@
 	  <PackageReference Include="Confluent.Kafka" Version="2.4.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="SettingModels\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\KafkaSharing.ShareLibrary\KafkaSharing.ShareLibrary.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

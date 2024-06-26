@@ -1,4 +1,5 @@
 using Confluent.Kafka;
+using KafkaSharing.ShareLibrary.SettingModels;
 using Microsoft.AspNetCore.Mvc;
 
 namespace KafkaSharing.WebApi.Controllers;
@@ -7,33 +8,27 @@ namespace KafkaSharing.WebApi.Controllers;
 [Route("api/v1/kafka")]
 public class TestController : ControllerBase
 {
-    private IProducer<Null, string> _producer;
+    private IProducer<string, string> _producer;
     private readonly ILogger<TestController> _logger;
-    private string _topics;
-    private string _server;
-    private string _userName;
-    private string _password;
+    private readonly KafkaSettings _kafkaSettings;
 
-    public TestController(ILogger<TestController> logger)
+    public TestController(ILogger<TestController> logger, KafkaSettings kafkaSettings)
     {
+        this._kafkaSettings = kafkaSettings;
         this._logger = logger;
-        this._topics = "test-demo-1";
-        this._server = "localhost:9092";
-
-        this._userName = "admin";
-        this._password = "galliker";
+       
 
         var config = new ProducerConfig()
         {
-            BootstrapServers = this._server,
+            BootstrapServers = this._kafkaSettings.Server,
             AllowAutoCreateTopics = true,
             //Acks = Acks.All,
             SecurityProtocol = SecurityProtocol.SaslPlaintext,
             SaslMechanism = SaslMechanism.Plain,
-            SaslUsername = this._userName,
-            SaslPassword = this._password,
+            SaslUsername = this._kafkaSettings.UserName,
+            SaslPassword = this._kafkaSettings.Password,
         };
-        this._producer = new ProducerBuilder<Null, string>(config).Build();
+        this._producer = new ProducerBuilder<string, string>(config).Build();
 
     }
 
@@ -62,8 +57,8 @@ public class TestController : ControllerBase
             {
                 var dateTimeNow = DateTime.Now;
                 var value = hello + $"\n {i} at {dateTimeNow.Hour}:{dateTimeNow.Minute}:{dateTimeNow.Second}:{dateTimeNow.Ticks}";
-                await this._producer.ProduceAsync(this._topics,
-                                                    new Message<Null, string> { Value = value });
+                await this._producer.ProduceAsync(this._kafkaSettings.Topic,
+                                                    new Message<string, string> {Key = Ulid.NewUlid().ToString(), Value = value });
 
                 this._logger.LogInformation(value);
             }

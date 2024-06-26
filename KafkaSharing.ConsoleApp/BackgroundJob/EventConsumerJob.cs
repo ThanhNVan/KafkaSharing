@@ -1,4 +1,5 @@
 ﻿using Confluent.Kafka;
+using KafkaSharing.ShareLibrary.SettingModels;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -8,38 +9,29 @@ public class EventConsumerJob : BackgroundService
 {
     #region [ Fields ]
     private readonly ILogger<EventConsumerJob> _logger;
-
-    private string _server;
-
-    private string _topics;
-    private string _userName;
-    private string _password;
-    private IConsumer<Ignore, string> _consumer;
+    private readonly KafkaSettings _kafkaSettings;
+    private IConsumer<string, string> _consumer;
     #endregion
 
     #region [ Ctor ]
-    public EventConsumerJob(ILogger<EventConsumerJob> logger)
+    public EventConsumerJob(ILogger<EventConsumerJob> logger, KafkaSettings kafkaSettings)
     {
         this._logger = logger;
-        this._topics = "test-demo-1";
-        //this._topics = "customers";
-        this._server = "localhost:9092";
-        this._userName = "admin";
-        this._password = "galliker";
+        this._kafkaSettings = kafkaSettings;
         var config = new ConsumerConfig()
         {
-            BootstrapServers = this._server,
+            BootstrapServers = this._kafkaSettings.Server,
             AllowAutoCreateTopics = true,
             AutoOffsetReset = AutoOffsetReset.Earliest,
             SecurityProtocol = SecurityProtocol.SaslPlaintext,
             SaslMechanism = SaslMechanism.Plain,
-            SaslUsername = this._userName,
-            SaslPassword = this._password,
-            GroupId = Guid.NewGuid().ToString(),
+            SaslUsername = this._kafkaSettings.UserName,
+            SaslPassword = this._kafkaSettings.Password,
+            GroupId = this._kafkaSettings.GroupId,
         };
 
-        this._consumer = new ConsumerBuilder<Ignore, string>(config).Build();
-        this._consumer.Subscribe(this._topics);
+        this._consumer = new ConsumerBuilder<string, string>(config).Build();
+        this._consumer.Subscribe(this._kafkaSettings.Topic);
     }
     #endregion
 
