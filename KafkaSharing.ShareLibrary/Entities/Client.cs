@@ -1,16 +1,10 @@
-﻿namespace KafkaSharing.ShareLibrary.Entities;
+﻿using KafkaSharing.ShareLibrary.Entities.Base;
+
+namespace KafkaSharing.ShareLibrary.Entities;
 
 
-public class Client
+public class Client : BaseEntity
 {
-    public string Id { get; set; }
-
-    public DateTime CreatedAt { get; set; }
-    
-    public DateTime LastUpdatedAt { get; set; }
-    
-    public bool IsActive { get; set; }
-
     public string Name { get; set; }
 
     public string Description { get; set; }

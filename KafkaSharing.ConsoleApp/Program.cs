@@ -1,5 +1,4 @@
-﻿using KafkaSharing.ShareLibrary.SettingModels;
-using Microsoft.Extensions.Configuration;
+﻿using KafkaSharing.ShareLibrary.ServiceExtension;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using TestLocalConsole.BackgroundJob;
@@ -14,10 +13,7 @@ internal class Program
 
         var builder = Host.CreateApplicationBuilder();
 
-        var kafkaSettings = new KafkaSettings();
-        builder.Configuration.GetSection("KafkaSettings").Bind(kafkaSettings);
-
-        builder.Services.AddSingleton(kafkaSettings);
+        builder.Services.AddServices(builder.Configuration);
         builder.Services.AddHostedService<EventConsumerJob>();
 
         builder.Build().Run();
