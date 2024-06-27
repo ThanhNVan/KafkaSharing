@@ -5,7 +5,6 @@ using KafkaSharing.ShareLibrary.Providers;
 using KafkaSharing.ShareLibrary.SettingModels;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 
 namespace TestLocalConsole.BackgroundJob;
 
@@ -29,8 +28,9 @@ public class EventConsumerJob : BackgroundService
         this._kafkaSettings = kafkaSettings;
         this._messageProvider = messageProvider;
         this._clientProvider = clientProvider;
-
+        
         this._consumer = new ConsumerBuilder<string, string>(this.GetComsumerConfiguration()).Build();
+        //this._consumer = new ConsumerBuilder<string, string>(this.GetComsumerConfiguration()).Build();
     }
     #endregion
 
@@ -41,8 +41,8 @@ public class EventConsumerJob : BackgroundService
         {
             try
             {
-                //this.ConsumeTestTopic();
-                await this.ConsumeClientTopicAsync();
+                this.ConsumeTestTopic();
+                //await this.ConsumeClientTopicAsync(cancellationToken);
                 await Task.Delay(TimeSpan.FromSeconds(0.2));
             }
             catch (Exception ex)
@@ -59,35 +59,42 @@ public class EventConsumerJob : BackgroundService
     #region [ Private Methods ]
     private void ConsumeTestTopic()
     {
-        this._consumer.Subscribe("test-topic");
-        var consumeResult = this._consumer.Consume(TimeSpan.FromSeconds(5));
-        if (consumeResult == null)
+        //using var consumer = new ConsumerBuilder<string, string>(this.GetComsumerConfiguration()).Build();
+        _consumer.Subscribe("test-topic");
+        var consumeResult = _consumer.Consume(3000);
+
+        if (consumeResult is null)
         {
-            return;
+            var dateTimeNow = DateTime.Now;
+            this._logger.LogWarning($"No message at {dateTimeNow.Hour}:{dateTimeNow.Minute}:{dateTimeNow.Second}:{dateTimeNow.Ticks}");   
         }
-        var dateTimeNow = DateTime.Now;
-        this._logger.LogInformation($"Message consumed: {consumeResult.Message.Value} \n at {dateTimeNow.Hour}:{dateTimeNow.Minute}:{dateTimeNow.Second}:{dateTimeNow.Ticks}");
-
+        else
+        { 
+            var dateTimeNow = DateTime.Now;
+            this._logger.LogInformation($"Message consumed: {consumeResult.Message.Value} \n at {dateTimeNow.Hour}:{dateTimeNow.Minute}:{dateTimeNow.Second}:{dateTimeNow.Ticks}");
+        }
+        //consumer.Dispose();
         return;
-
     }
 
     private async Task ConsumeClientTopicAsync(CancellationToken cancellationToken = default)
     {
 
-        cancellationToken.ThrowIfCancellationRequested();
-        this._consumer.Subscribe(this._kafkaSettings.Topic);
-        var consumeResult = this._consumer.Consume(cancellationToken);
+        //cancellationToken.ThrowIfCancellationRequested();
+        using var consumer = new ConsumerBuilder<string, string>(this.GetComsumerConfiguration()).Build();
+        consumer.Subscribe(this._kafkaSettings.Topic);
+        var consumeResult = consumer.Consume(cancellationToken);
 
+        var dateTimeNow = DateTime.Now;
         if (consumeResult == null)
         {
+            this._logger.LogInformation($"No message at {dateTimeNow.Hour}:{dateTimeNow.Minute}:{dateTimeNow.Second}:{dateTimeNow.Ticks}");
+            //await Task.Delay(5000);
             return;
         }
 
         // read from DB
         var message = await this._messageProvider.GetSingleByIdAsync(consumeResult.Key, cancellationToken);
-
-        //var latestMessage = await this._messageProvider.GetSingleLatestMessageAsync(cancellationToken);
 
         if (message is null || message.IsConsumed)
         {
@@ -101,8 +108,7 @@ public class EventConsumerJob : BackgroundService
         message.IsConsumed = true;
         message.ConsumedAt = DateTime.Now;
         await this._messageProvider.UpdateAsync(message,cancellationToken);
-
-        return;
+        this._logger.LogInformation($"Message {consumeResult.Key} is consumed at {dateTimeNow.Hour}:{dateTimeNow.Minute}:{dateTimeNow.Second}:{dateTimeNow.Ticks}");
     }
 
     private ConsumerConfig GetComsumerConfiguration()

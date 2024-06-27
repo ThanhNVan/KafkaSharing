@@ -13,7 +13,7 @@ namespace KafkaSharing.WebApi.Controllers;
 public class KafkaController : ControllerBase
 {
     #region [ Fields ]
-    private IProducer<string, string> _producer;
+    //private IProducer<string, string> _producer;
     private readonly ILogger<KafkaController> _logger;
     private readonly KafkaSettings _kafkaSettings;
     private readonly IMessageProvider _messageProvider;
@@ -26,7 +26,7 @@ public class KafkaController : ControllerBase
         this._messageProvider = messageProvider;
         this._logger = logger;
        
-        this._producer = new ProducerBuilder<string, string>(this.GetProducerConfiguration()).Build();
+        //this._producer = new ProducerBuilder<string, string>(this.GetProducerConfiguration()).Build();
 
     }
     #endregion
@@ -50,13 +50,17 @@ public class KafkaController : ControllerBase
     [HttpPost("produce")]
     public async ValueTask<IActionResult> ProduceSingleAsync([FromBody]ClientModel model, CancellationToken cancellationToken = default)
     {
+
         try
         {
-           var id = await this._messageProvider.AddSingleAsync(model, cancellationToken);
-           await this._producer.ProduceAsync(this._kafkaSettings.Topic,
-                                                   new Message<string, string> { Key = id, Value = model.SerializeObject() });
+
+            var id = await this._messageProvider.AddSingleAsync(model, cancellationToken);
+
+            using var producer = new ProducerBuilder<string, string>(this.GetProducerConfiguration()).Build();
+            await producer.ProduceAsync(this._kafkaSettings.Topic,
+                                            new Message<string, string> { Key = id, Value = model.SerializeObject() });
             this._logger.LogInformation($"Added a message with Id: {id} at {DateTime.Now.ToLongTimeString()}");
-            this._producer.Flush();
+            producer.Flush();
         }
         catch (Exception ex)
         {
@@ -72,18 +76,19 @@ public class KafkaController : ControllerBase
     {
         try
         {
+            using var producer = new ProducerBuilder<string, string>(this.GetProducerConfiguration()).Build();
             var hello = "Hello World";
             for (var i = 0; i < 100; i++)
             {
                 var dateTimeNow = DateTime.Now;
                 var value = hello + $"\n {i} at {dateTimeNow.Hour}:{dateTimeNow.Minute}:{dateTimeNow.Second}:{dateTimeNow.Ticks}";
-                await this._producer.ProduceAsync("test-topic",
+                await producer.ProduceAsync("test-topic",
                                                     new Message<string, string> {Key = Ulid.NewUlid().ToString(), Value = value });
 
                 this._logger.LogInformation(value);
             }
 
-            this._producer.Flush();
+            producer.Flush();
         }
         catch (Exception ex)
         {

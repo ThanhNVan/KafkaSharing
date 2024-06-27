@@ -18,16 +18,16 @@ public static class ServicesExtensions
         var options = new DbContextOptions<AppDbContext>();
         var builder = new DbContextOptionsBuilder<AppDbContext>(options);
         builder.UseSqlServer(connectionString);
-        builder.EnableSensitiveDataLogging();
+        //builder.EnableSensitiveDataLogging();
 
         services.AddPooledDbContextFactory<AppDbContext>(options =>
         {
             options.UseSqlServer(connectionString,
                 sqlServerOptionsAction =>
                 {
-                    sqlServerOptionsAction.EnableRetryOnFailure();
+                    //sqlServerOptionsAction.EnableRetryOnFailure();
                 });
-            options.EnableSensitiveDataLogging();
+            //options.EnableSensitiveDataLogging();
             options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
 
         });
