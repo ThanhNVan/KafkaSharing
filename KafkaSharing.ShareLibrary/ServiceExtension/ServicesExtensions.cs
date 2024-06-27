@@ -1,4 +1,6 @@
 ﻿using KafkaSharing.ShareLibrary.DatabaseContext;
+using KafkaSharing.ShareLibrary.Providers;
+using KafkaSharing.ShareLibrary.Providers.Classes;
 using KafkaSharing.ShareLibrary.SettingModels;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -35,5 +37,12 @@ public static class ServicesExtensions
         configuration.GetSection(nameof(KafkaSettings)).Bind(kafkaSettings);
 
         services.AddSingleton(kafkaSettings);
+        services.AddProvider();
+    }
+
+    public static void AddProvider(this IServiceCollection services)
+    {
+        services.AddTransient<IClientProvider, ClientProvider>();
+        services.AddTransient<IMessageProvider, MessageProvider>();
     }
 }

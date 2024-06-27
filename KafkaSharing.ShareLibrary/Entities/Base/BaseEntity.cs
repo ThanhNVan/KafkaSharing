@@ -27,6 +27,15 @@ public class BaseEntity
     public BaseEntity()
     {
         Id = Ulid.NewUlid().ToString();
+        //Id = Guid.NewGuid().ToString();
+        IsActive = true;
+        CreatedAt = DateTime.Now;
+        LastUpdatedAt = DateTime.Now;
+    }
+    
+    public BaseEntity(string id)
+    {
+        Id = id;
         IsActive = true;
         CreatedAt = DateTime.Now;
         LastUpdatedAt = DateTime.Now;
